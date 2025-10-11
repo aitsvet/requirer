@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requirer</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="config.js" defer></script>
+    <script src="llm-client.js" defer></script>
+    <script src="response-parser.js" defer></script>
+    <script src="logger.js" defer></script>
+    <script src="processor.js" defer></script>
+    <script src="markdown-parser.js" defer></script>
+    <script src="table.js" defer></script>
+    <script src="main.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <div id="loading" class="loading">Loading markdown file...</div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div class="api-config">
+            <div class="config-row">
+                <label for="api-url">OpenAI API URL:</label>
+                <input type="text" id="api-url" placeholder="https://api.openai.com/v1/chat/completions">
+            </div>
+            <div class="config-row">
+                <label for="api-key">API Key:</label>
+                <input type="password" id="api-key" placeholder="Enter your OpenAI API key">
+            </div>
+            <div class="config-row">
+                <label for="model-name">Model name:</label>
+                <select id="model-name">
+                    <option value="">Loading models...</option>
+                </select>
+            </div>
+            <label for="parameters-textarea">Parameters (JSON):</label>
+            <textarea id="parameters-textarea" placeholder="Enter LLM parameters as JSON..." style="font-family: monospace; font-size: 12px;"></textarea>
+            <label for="prompt-textarea">Prompt template:</label>
+            <textarea id="prompt-textarea" placeholder="Enter your prompt here..."></textarea>
+            <div class="prompt-buttons">
+                <button id="run-all-btn" class="action-btn">Run All</button>
+                <button id="run-empty-btn" class="action-btn">Run Empty</button>
+            </div>
+        </div>
+
+        <div id="table-controls" style="display: none; margin-bottom: 10px;">
+            <button id="collapse-all-btn" class="action-btn">Collapse All</button>
+            <button id="expand-all-btn" class="action-btn">Expand All</button>
+            <button id="download-md-btn" class="action-btn" style="background-color: #28a745; color: white;">Download MD</button>
+            <button id="upload-md-btn" class="action-btn" style="background-color: #007bff; color: white;">Upload MD</button>
+            <button id="upload-json-btn" class="action-btn" style="background-color: #007bff; color: white;">Upload JSON</button>
+            <input type="file" id="upload-md-input" accept=".md" style="display: none;">
+            <input type="file" id="upload-json-input" accept=".json" style="display: none;">
+        </div>
+
+        <table id="sections-table" class="section-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th style="width: 5em;"></th>
+                    <th>Source</th>
+                    <th>Code</th>
+                    <th>Other</th>
+                </tr>
+            </thead>
+            <tbody id="sections-tbody">
+            </tbody>
+        </table>
+
+        <button class="download-btn" id="download-json">Download JSON</button>
+
+        <div id="json-output" class="json-output" style="display: none;"></div>
+        
+        <div class="logs-section">
+            <h3>Request/Response Logs</h3>
+            <div class="logs-controls">
+                <button id="clear-logs-btn" class="action-btn">Clear Logs</button>
+                <button id="download-logs-btn" class="action-btn">Download Logs</button>
+            </div>
+            <div id="logs-output" class="logs-output"></div>
+        </div>
+    </div>
+</body>
+</html>
