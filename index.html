@@ -36,7 +36,12 @@
             </div>
             <label for="parameters-textarea">Parameters (JSON):</label>
             <textarea id="parameters-textarea" placeholder="Enter LLM parameters as JSON..." style="font-family: monospace; font-size: 12px;"></textarea>
-            <label for="prompt-textarea">Prompt template:</label>
+            <div class="config-row">
+                <label for="prompt-select">Prompt template:</label>
+                <select id="prompt-select">
+                    <option value="">Loading prompts...</option>
+                </select>
+            </div>
             <textarea id="prompt-textarea" placeholder="Enter your prompt here..."></textarea>
             <div class="prompt-buttons">
                 <button id="run-all-btn" class="action-btn">Run All</button>

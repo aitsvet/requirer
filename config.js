@@ -4,10 +4,12 @@ class ConfigManager {
         this.model = '';
         this.apiKey = '';
         this.promptTemplate = '';
+        this.prompts = [];
         this.parameters = {};
         this.config = null;
         this.availableModels = [];
         this.modelSelect = null;
+        this.promptSelect = null;
     }
 
     async loadConfig() {
@@ -20,7 +22,8 @@ class ConfigManager {
             this.apiUrl = this.config.api.url;
             this.model = this.config.api.model;
             this.apiKey = this.config.api.key;
-            this.promptTemplate = this.config.prompt;
+            this.prompts = this.config.prompts || [];
+            this.promptTemplate = this.prompts.length > 0 ? this.prompts[0].content : '';
             this.parameters = this.config.parameters || {};
             this.populateFormElements();
             return true;
@@ -34,6 +37,7 @@ class ConfigManager {
         const apiUrlInput = document.getElementById('api-url');
         const apiKeyInput = document.getElementById('api-key');
         const modelNameSelect = document.getElementById('model-name');
+        const promptSelect = document.getElementById('prompt-select');
         const promptTextarea = document.getElementById('prompt-textarea');
         const parametersTextarea = document.getElementById('parameters-textarea');
         
@@ -42,6 +46,10 @@ class ConfigManager {
         if (modelNameSelect) {
             this.modelSelect = modelNameSelect;
             this.setupModelSelect();
+        }
+        if (promptSelect) {
+            this.promptSelect = promptSelect;
+            this.setupPromptSelect();
         }
         if (promptTextarea) {
             promptTextarea.value = this.promptTemplate;
@@ -103,6 +111,8 @@ class ConfigManager {
     setupEventListeners() {
         const apiUrlInput = document.getElementById('api-url');
         const apiKeyInput = document.getElementById('api-key');
+        const promptSelect = document.getElementById('prompt-select');
+        const promptTextarea = document.getElementById('prompt-textarea');
         
         if (apiUrlInput && apiKeyInput) {
             let fetchTimeout;
@@ -116,6 +126,25 @@ class ConfigManager {
             apiUrlInput.addEventListener('input', fetchModels);
             apiKeyInput.addEventListener('input', fetchModels);
         }
+        
+        if (promptSelect && promptTextarea) {
+            promptSelect.addEventListener('change', (event) => {
+                const selectedIndex = event.target.value;
+                
+                if (selectedIndex === '') {
+                    // "New prompt template" selected - clear textarea
+                    promptTextarea.value = '';
+                } else {
+                    // Load selected prompt
+                    const promptIndex = parseInt(selectedIndex);
+                    if (promptIndex >= 0 && promptIndex < this.prompts.length) {
+                        promptTextarea.value = this.prompts[promptIndex].content;
+                    }
+                }
+                
+                this.setTextareaHeight(promptTextarea);
+            });
+        }
     }
 
     setupModelSelect() {
@@ -123,6 +152,40 @@ class ConfigManager {
         this.modelSelect.innerHTML = '<option value="">Loading models...</option>';
         if (this.model) {
             this.modelSelect.value = this.model;
+        }
+    }
+
+    setupPromptSelect() {
+        if (!this.promptSelect) return;
+        this.promptSelect.innerHTML = '<option value="">Loading prompts...</option>';
+        this.populatePromptSelect();
+    }
+
+    populatePromptSelect() {
+        if (!this.promptSelect || !this.prompts.length) {
+            this.promptSelect.innerHTML = '<option value="">No prompts available</option>';
+            return;
+        }
+        
+        this.promptSelect.innerHTML = '';
+        
+        // Add "New prompt template" option first
+        const newPromptOption = document.createElement('option');
+        newPromptOption.value = '';
+        newPromptOption.textContent = 'New prompt template';
+        this.promptSelect.appendChild(newPromptOption);
+        
+        // Add existing prompts
+        this.prompts.forEach((prompt, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = prompt.name;
+            this.promptSelect.appendChild(option);
+        });
+        
+        // Set default selection to first prompt if available
+        if (this.prompts.length > 0) {
+            this.promptSelect.value = '0';
         }
     }
 
