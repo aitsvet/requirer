@@ -148,6 +148,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             actionCell.appendChild(runButton);
 
+            const runThisAndBelowButton = document.createElement('button');
+            runThisAndBelowButton.innerHTML = 'Run this<br>and below';
+            runThisAndBelowButton.className = 'run-btn';
+            runThisAndBelowButton.style.fontSize = '0.8em';
+            runThisAndBelowButton.style.padding = '4px 8px';
+            runThisAndBelowButton.addEventListener('click', () => {
+                processSectionAndBelow(index, runThisAndBelowButton);
+            });
+            actionCell.appendChild(runThisAndBelowButton);
+
             row.appendChild(actionCell);
             row.appendChild(sourceCell);
             row.appendChild(codeCell);

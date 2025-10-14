@@ -4,71 +4,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     llmProcessor = new LLMProcessor();
     await llmProcessor.initialize();
     
-    const runAllBtn = document.getElementById('run-all-btn');
-    const runEmptyBtn = document.getElementById('run-empty-btn');
     const clearLogsBtn = document.getElementById('clear-logs-btn');
     const downloadLogsBtn = document.getElementById('download-logs-btn');
-    
-    runAllBtn.addEventListener('click', async () => {
-        if (!await llmProcessor.initialize()) {
-            return;
-        }
-        
-        const prompt = document.getElementById('prompt-textarea').value;
-        if (!prompt.trim()) {
-            alert('Please enter a prompt');
-            return;
-        }
-        
-        const sections = window.parsedSections || [];
-        if (sections.length === 0) {
-            alert('No sections to process');
-            return;
-        }
-        
-        runAllBtn.disabled = true;
-        runAllBtn.textContent = 'Processing...';
-        
-        try {
-            const results = await llmProcessor.processAllSections(sections, prompt);
-            llmProcessor.updateJSONOutput(sections);
-        } catch (error) {
-            alert(`Error processing sections: ${error.message}`);
-        } finally {
-            runAllBtn.disabled = false;
-            runAllBtn.textContent = 'Run All';
-        }
-    });
-    
-    runEmptyBtn.addEventListener('click', async () => {
-        if (!await llmProcessor.initialize()) return;
-        
-        const prompt = document.getElementById('prompt-textarea').value;
-        if (!prompt.trim()) {
-            alert('Please enter a prompt');
-            return;
-        }
-        
-        const sections = window.parsedSections || [];
-        if (sections.length === 0) {
-            alert('No sections to process');
-            return;
-        }
-        
-        runEmptyBtn.disabled = true;
-        runEmptyBtn.textContent = 'Processing...';
-        
-        try {
-            const results = await llmProcessor.processEmptySections(sections, prompt);
-            console.log('Processing complete:', results);
-            llmProcessor.updateJSONOutput(sections);
-        } catch (error) {
-            alert(`Error processing sections: ${error.message}`);
-        } finally {
-            runEmptyBtn.disabled = false;
-            runEmptyBtn.textContent = 'Run Empty';
-        }
-    });
     
     clearLogsBtn.addEventListener('click', () => {
         llmProcessor.clearLogs();
@@ -143,6 +80,47 @@ async function processSection(index, button = null) {
         if (button) {
             button.disabled = false;
             button.textContent = 'Rerun';
+        }
+    }
+}
+
+async function processSectionAndBelow(startIndex, button = null) {
+    if (!llmProcessor) {
+        llmProcessor = new LLMProcessor();
+    }
+    
+    if (!await llmProcessor.initialize()) return;
+    
+    const prompt = document.getElementById('prompt-textarea').value;
+    if (!prompt.trim()) {
+        alert('Please enter a prompt');
+        return;
+    }
+    
+    const sections = window.parsedSections || [];
+    if (startIndex >= sections.length) {
+        alert('Invalid section index');
+        return;
+    }
+    
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Processing...';
+    }
+    
+    try {
+        // Process all sections from startIndex to the end
+        for (let i = startIndex; i < sections.length; i++) {
+            const result = await llmProcessor.processSection(sections[i], prompt, sections, i);
+            llmProcessor.updateTableRow(i, result);
+        }
+        llmProcessor.updateJSONOutput(sections);
+    } catch (error) {
+        alert(`Error processing sections: ${error.message}`);
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = 'Run this<br>and below';
         }
     }
 }
@@ -509,6 +487,16 @@ function rerenderTable(sections) {
             processSection(index, runButton);
         });
         actionCell.appendChild(runButton);
+
+        const runThisAndBelowButton = document.createElement('button');
+        runThisAndBelowButton.innerHTML = 'Run this<br>and below';
+        runThisAndBelowButton.className = 'run-btn';
+        runThisAndBelowButton.style.fontSize = '0.8em';
+        runThisAndBelowButton.style.padding = '4px 8px';
+        runThisAndBelowButton.addEventListener('click', () => {
+            processSectionAndBelow(index, runThisAndBelowButton);
+        });
+        actionCell.appendChild(runThisAndBelowButton);
 
         row.appendChild(actionCell);
         row.appendChild(sourceCell);
