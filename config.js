@@ -23,7 +23,7 @@ class ConfigManager {
             this.model = this.config.api.model;
             this.apiKey = this.config.api.key;
             this.prompts = this.config.prompts || [];
-            this.promptTemplate = this.prompts.length > 0 ? this.prompts[0].content : '';
+            this.promptTemplate = ''; // Start with blank textarea
             this.parameters = this.config.parameters || {};
             this.populateFormElements();
             return true;
@@ -183,10 +183,8 @@ class ConfigManager {
             this.promptSelect.appendChild(option);
         });
         
-        // Set default selection to first prompt if available
-        if (this.prompts.length > 0) {
-            this.promptSelect.value = '0';
-        }
+        // Set default selection to "New prompt template" (empty value)
+        this.promptSelect.value = '';
     }
 
     async fetchModels() {
