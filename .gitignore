@@ -1,0 +1,5 @@
+venv/
+*.zip
+*.txt
+*.json
+*.md

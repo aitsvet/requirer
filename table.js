@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const actionCell = document.createElement('td');
             const runButton = document.createElement('button');
-            runButton.textContent = 'Rerun';
+            runButton.textContent = 'Update this';
             runButton.className = 'run-btn';
             runButton.addEventListener('click', () => {
                 processSection(index, runButton);
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             actionCell.appendChild(runButton);
 
             const runThisAndBelowButton = document.createElement('button');
-            runThisAndBelowButton.innerHTML = 'Run this<br>and below';
+            runThisAndBelowButton.innerHTML = 'Update this<br>and below';
             runThisAndBelowButton.className = 'run-btn';
             runThisAndBelowButton.style.fontSize = '0.8em';
             runThisAndBelowButton.style.padding = '4px 8px';
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!table) return;
             
             const tableWidth = table.offsetWidth;
-            const firstColumnWidth = 80;
+            const firstColumnWidth = 100;
             const remainingWidth = tableWidth - firstColumnWidth;
             const columnWidth = Math.floor(remainingWidth / 3);
             

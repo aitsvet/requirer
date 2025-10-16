@@ -196,6 +196,7 @@ h1 {
 
 .run-btn {
     padding: 6px 12px;
+    margin: 3px;
     background-color: #28a745;
     color: white;
     border: none;

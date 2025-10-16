@@ -51,8 +51,8 @@ class LLMProcessor {
                 if (!allSections[sectionIndex].code) allSections[sectionIndex].code = [];
                 if (!allSections[sectionIndex].other) allSections[sectionIndex].other = [];
                 
-                allSections[sectionIndex].code = [...allSections[sectionIndex].code, ...result.code];
-                allSections[sectionIndex].other = [...allSections[sectionIndex].other, ...result.other];
+                allSections[sectionIndex].code = result.code;
+                allSections[sectionIndex].other = result.other;
                 
                 this.updateJSONOutput(allSections);
             }
@@ -208,12 +208,16 @@ class LLMProcessor {
             
             if (result.code && result.code.length > 0) {
                 const newCodeContent = result.code.map(item => `<div>${item}</div>`).join('');
-                codeCell.innerHTML += newCodeContent;
+                codeCell.innerHTML = newCodeContent;
+            } else {
+                codeCell.innerHTML = '';
             }
             
             if (result.other && result.other.length > 0) {
                 const newOtherContent = result.other.map(item => `<div>${item}</div>`).join('');
-                otherCell.innerHTML += newOtherContent;
+                otherCell.innerHTML = newOtherContent;
+            } else {
+                otherCell.innerHTML = '';
             }
             
             setTimeout(() => {
