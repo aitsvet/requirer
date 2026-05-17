@@ -68,12 +68,6 @@ class LLMProcessor {
         }
     }
 
-    shouldSkipSection(prompt) {
-        const sourcePlaceholderRegex = /\{sources\.(\d+)\}/g;
-        const sourceMatches = prompt.match(sourcePlaceholderRegex);
-        return (sourceMatches && sourceMatches.length > 0);
-    }
-
     getSectionsToSkip(prompt) {
         const sourcePlaceholderRegex = /\{sources\.(\d+)\}/g;
         const skipSections = new Set();
@@ -207,14 +201,14 @@ class LLMProcessor {
             const otherCell = row.children[3];
             
             if (result.code && result.code.length > 0) {
-                const newCodeContent = result.code.map(item => `<div>${item}</div>`).join('');
+                const newCodeContent = result.code.map(item => `<div>${escapeHtml(item)}</div>`).join('');
                 codeCell.innerHTML = newCodeContent;
             } else {
                 codeCell.innerHTML = '';
             }
-            
+
             if (result.other && result.other.length > 0) {
-                const newOtherContent = result.other.map(item => `<div>${item}</div>`).join('');
+                const newOtherContent = result.other.map(item => `<div>${escapeHtml(item)}</div>`).join('');
                 otherCell.innerHTML = newOtherContent;
             } else {
                 otherCell.innerHTML = '';

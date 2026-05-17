@@ -118,10 +118,10 @@ class Logger {
             meta = `Stack: ${logEntry.data.stack}`;
         }
         
-        logElement.innerHTML = 
-            `<div class="log-timestamp">${timestamp}</div>
-            <div class="log-content">${content}</div>
-            <div class="log-meta">${meta}</div>`;
+        logElement.innerHTML =
+            `<div class="log-timestamp">${escapeHtml(timestamp)}</div>
+            <div class="log-content">${escapeHtml(content).replace(/\n/g, '<br>')}</div>
+            <div class="log-meta">${escapeHtml(meta).replace(/\n/g, '<br>')}</div>`;
         
         logsOutput.appendChild(logElement);
         logsOutput.scrollTop = logsOutput.scrollHeight;

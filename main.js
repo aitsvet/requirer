@@ -109,15 +109,14 @@ async function processSectionAndBelow(startIndex, button = null) {
     }
     
     try {
-        // Process all sections from startIndex to the end
         for (let i = startIndex; i < sections.length; i++) {
             const result = await llmProcessor.processSection(sections[i], prompt, sections, i);
             llmProcessor.updateTableRow(i, result);
         }
-        llmProcessor.updateJSONOutput(sections);
     } catch (error) {
         alert(`Error processing sections: ${error.message}`);
     } finally {
+        llmProcessor.updateJSONOutput(sections);
         if (button) {
             button.disabled = false;
             button.innerHTML = 'Run this<br>and below';
@@ -439,7 +438,7 @@ function rerenderTable(sections) {
                             const tr = document.createElement('tr');
                             headers.forEach(header => {
                                 const td = document.createElement('td');
-                                td.innerHTML = (row[header] || '').replace(/\n/g, '<br>');
+                                td.innerHTML = escapeHtml(row[header] || '').replace(/\n/g, '<br>');
                                 td.style.padding = '8px';
                                 td.style.border = '1px solid #ccc';
                                 tr.appendChild(td);
@@ -451,7 +450,7 @@ function rerenderTable(sections) {
                         contentContainer.appendChild(tableEl);
                     } else if (typeof item === 'string') {
                         const textEl = document.createElement('div');
-                        textEl.innerHTML = item.replace(/\n/g, '<br>');
+                        textEl.innerHTML = escapeHtml(item).replace(/\n/g, '<br>');
                         textEl.style.marginBottom = '10px';
                         contentContainer.appendChild(textEl);
                     }
@@ -459,7 +458,7 @@ function rerenderTable(sections) {
             } else {
                 const text = section.source.join('\n\n');
                 const textEl = document.createElement('div');
-                textEl.innerHTML = text.replace(/\n/g, '<br>');
+                textEl.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
                 textEl.style.marginBottom = '10px';
                 contentContainer.appendChild(textEl);
             }
@@ -469,13 +468,13 @@ function rerenderTable(sections) {
 
         const codeCell = document.createElement('td');
         if (section.code && section.code.length > 0) {
-            const codeContent = section.code.map(item => `<div>${item}</div>`).join('');
+            const codeContent = section.code.map(item => `<div>${escapeHtml(item)}</div>`).join('');
             codeCell.innerHTML = codeContent;
         }
 
         const otherCell = document.createElement('td');
         if (section.other && section.other.length > 0) {
-            const otherContent = section.other.map(item => `<div>${item}</div>`).join('');
+            const otherContent = section.other.map(item => `<div>${escapeHtml(item)}</div>`).join('');
             otherCell.innerHTML = otherContent;
         }
 

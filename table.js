@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const tr = document.createElement('tr');
                                 headers.forEach(header => {
                                     const td = document.createElement('td');
-                                    td.innerHTML = (row[header] || '').replace(/\n/g, '<br>');
+                                    td.innerHTML = escapeHtml(row[header] || '').replace(/\n/g, '<br>');
                                     td.style.padding = '8px';
                                     td.style.border = '1px solid #ccc';
                                     tr.appendChild(td);
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             contentContainer.appendChild(tableEl);
                         } else if (typeof item === 'string') {
                             const textEl = document.createElement('div');
-                            textEl.innerHTML = item.replace(/\n/g, '<br>');
+                            textEl.innerHTML = escapeHtml(item).replace(/\n/g, '<br>');
                             textEl.style.marginBottom = '10px';
                             contentContainer.appendChild(textEl);
                         }
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     const text = section.source.join('\n\n');
                     const textEl = document.createElement('div');
-                    textEl.innerHTML = text.replace(/\n/g, '<br>');
+                    textEl.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
                     textEl.style.marginBottom = '10px';
                     contentContainer.appendChild(textEl);
                 }
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const actionCell = document.createElement('td');
             const runButton = document.createElement('button');
-            runButton.textContent = 'Update this';
+            runButton.textContent = 'Rerun';
             runButton.className = 'run-btn';
             runButton.addEventListener('click', () => {
                 processSection(index, runButton);

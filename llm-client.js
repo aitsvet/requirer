@@ -9,10 +9,6 @@ class APIClient {
             prompt: prompt,
             ...parameters
         };
-        if (parameters.max_tokens) {
-            const adjustedMaxTokens = this.calculateMaxTokens(prompt);
-            requestData.max_tokens = adjustedMaxTokens;
-        }
         const response = await fetch(this.configManager.getApiUrl() + '/completions', {
             method: 'POST',
             headers: {
@@ -27,14 +23,4 @@ class APIClient {
         return await response.json();
     }
 
-    calculateInputTokens(prompt) {
-        return Math.ceil(prompt.length / 4);
-    }
-
-    calculateMaxTokens(prompt) {
-        const inputTokens = this.calculateInputTokens(prompt);
-        const parameters = this.configManager.getParameters();
-        const maxTokens = parameters.max_tokens;
-        return Math.max(1, maxTokens - inputTokens);
-    }
 }

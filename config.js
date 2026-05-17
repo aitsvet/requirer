@@ -1,3 +1,11 @@
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 class ConfigManager {
     constructor() {
         this.apiUrl = '';
@@ -162,7 +170,8 @@ class ConfigManager {
     }
 
     populatePromptSelect() {
-        if (!this.promptSelect || !this.prompts.length) {
+        if (!this.promptSelect) return;
+        if (!this.prompts.length) {
             this.promptSelect.innerHTML = '<option value="">No prompts available</option>';
             return;
         }

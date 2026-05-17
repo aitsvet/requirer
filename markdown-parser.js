@@ -33,7 +33,7 @@ class MarkdownParser {
                     if (!currentSection) {
                         currentSection = {
                             title: '',
-                            paragraphs: []
+                            source: []
                         };
                     }
                     currentSection.source.push(currentParagraph.trim());
