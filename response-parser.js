@@ -1,4 +1,12 @@
-/* exported ResponseParser */
+/* exported ResponseParser, extractLLMText */
+function extractLLMText(response) {
+    if (response.choices?.[0]) {
+        const choice = response.choices[0];
+        return choice.text ?? choice.message?.content ?? choice.content ?? '';
+    }
+    return response.text ?? response.content ?? '';
+}
+
 class ResponseParser {
     parseLLMResponse(response) {
         const lines = response.split('\n');
@@ -22,22 +30,22 @@ class ResponseParser {
 
     formatSectionForPrompt(section) {
         let content = '';
-        
+
         if (section.title) {
             content += `Title: ${section.title}\n\n`;
         }
-        
+
         if (section.source && section.source.length > 0) {
             section.source.forEach(sourceItem => {
                 if (typeof sourceItem === 'string') {
                     content += sourceItem + '\n\n';
                 } else if (Array.isArray(sourceItem)) {
                     content += 'Table data:\n';
-                    
+
                     if (sourceItem.length > 0) {
                         const firstRow = sourceItem[0];
                         const fieldNames = Object.keys(firstRow);
-                        
+
                         if (fieldNames.length === 2) {
                             const firstFieldName = fieldNames[0];
                             if (firstFieldName.startsWith('Сокр') || firstFieldName.startsWith('Терм')) {
@@ -66,18 +74,17 @@ class ResponseParser {
                 }
             });
         }
-        
+
         return content.trim();
     }
 
     substitutePlaceholders(prompt, section, allSections) {
         let result = prompt;
-        
+
         if (result.includes('{source}')) {
-            const sourceContent = this.formatSectionForPrompt(section);
-            result = result.replace('{source}', sourceContent);
+            result = result.replace('{source}', this.formatSectionForPrompt(section));
         }
-        
+
         const sourcePlaceholderRegex = /\{sources\.(\d+)\}/g;
         result = result.replace(sourcePlaceholderRegex, (match, index) => {
             const sectionIndex = parseInt(index);
@@ -86,22 +93,19 @@ class ResponseParser {
             }
             return match;
         });
-        
+
         if (result.includes('{code}')) {
-            const codeContent = section.code ? section.code.join('\n') : '';
-            result = result.replace('{code}', codeContent);
+            result = result.replace('{code}', section.code ? section.code.join('\n') : '');
         }
-        
+
         if (result.includes('{other}')) {
-            const otherContent = section.other ? section.other.join('\n') : '';
-            result = result.replace('{other}', otherContent);
+            result = result.replace('{other}', section.other ? section.other.join('\n') : '');
         }
-        
+
         if (result.includes('{section}')) {
-            const sectionContent = this.formatSectionForPrompt(section);
-            result = result.replace('{section}', sectionContent);
+            result = result.replace('{section}', this.formatSectionForPrompt(section));
         }
-        
+
         const sectionPlaceholderRegex = /\{sections\.(\d+)\}/g;
         result = result.replace(sectionPlaceholderRegex, (match, index) => {
             const sectionIndex = parseInt(index);
@@ -110,7 +114,7 @@ class ResponseParser {
             }
             return match;
         });
-        
+
         return result;
     }
 }

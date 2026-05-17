@@ -215,10 +215,15 @@ h1 {
 }
 
 .collapsible-title {
+    display: flex;
+    align-items: center;
     transition: all 0.2s ease;
     border-radius: 4px;
     padding: 8px;
     margin: 0 0 10px 0 !important;
+    cursor: pointer;
+    user-select: none;
+    color: #333;
 }
 
 .collapsible-title:hover {
@@ -227,7 +232,43 @@ h1 {
 
 .collapse-arrow {
     color: #666;
+    margin-right: 8px;
     transition: transform 0.2s ease;
+}
+
+.source-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+}
+
+.source-table th,
+.source-table td {
+    padding: 8px;
+    border: 1px solid #ccc;
+    text-align: left;
+}
+
+.source-table th {
+    background-color: #f2f2f2;
+}
+
+.source-text {
+    margin-bottom: 10px;
+}
+
+.run-btn-below {
+    font-size: 0.8em;
+    padding: 4px 8px;
+}
+
+.action-btn--success {
+    background-color: #28a745;
+}
+
+.action-btn--success:hover {
+    background-color: #218838;
 }
 
 .source-content-container {
@@ -249,6 +290,7 @@ h1 {
     display: flex;
     gap: 10px;
     margin-bottom: 15px;
+    flex-wrap: wrap;
 }
 
 #table-controls .action-btn {

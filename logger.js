@@ -1,5 +1,5 @@
 /* exported Logger */
-/* global escapeHtml */
+/* global createTextContent, extractLLMText */
 class Logger {
     constructor() {
         this.logs = [];
@@ -7,7 +7,7 @@ class Logger {
 
     logRequest(requestData, sectionIndex = null) {
         const promptTokenCount = Math.ceil(requestData.prompt.length / 4);
-        
+
         const logEntry = {
             type: 'request',
             timestamp: new Date().toISOString(),
@@ -27,30 +27,19 @@ class Logger {
     extractParameters(requestData) {
         const parameters = {};
         const excludeKeys = ['url', 'model', 'prompt'];
-        
+
         for (const [key, value] of Object.entries(requestData)) {
             if (!excludeKeys.includes(key)) {
                 parameters[key] = value;
             }
         }
-        
+
         return parameters;
     }
 
     logResponse(responseData, sectionIndex = null, duration = null) {
-        console.log('Full response data:', responseData);
-        
-        let content;
-        if (responseData.choices && responseData.choices[0]) {
-            content = responseData.choices[0].text || responseData.choices[0].message?.content || responseData.choices[0].content || '';
-        } else if (responseData.text) {
-            content = responseData.text;
-        } else if (responseData.content) {
-            content = responseData.content;
-        } else {
-            content = 'No content found in response';
-        }
-        
+        const content = extractLLMText(responseData);
+
         const logEntry = {
             type: 'response',
             timestamp: new Date().toISOString(),
@@ -98,14 +87,14 @@ class Logger {
 
         const logElement = document.createElement('div');
         logElement.className = `log-entry ${logEntry.type}`;
-        
+
         const timestamp = new Date(logEntry.timestamp).toLocaleString();
         const sectionInfo = logEntry.sectionIndex !== null ? ` (Section ${logEntry.sectionIndex + 1})` : '';
         const durationInfo = logEntry.duration ? ` (${this.formatDuration(logEntry.duration)})` : '';
-        
+
         let content = '';
         let meta = '';
-        
+
         if (logEntry.type === 'request') {
             content = `REQUEST${sectionInfo}:\n${logEntry.data.prompt}`;
             const paramsStr = Object.entries(logEntry.data.parameters)
@@ -119,12 +108,23 @@ class Logger {
             content = `ERROR${sectionInfo}:\n${logEntry.data.message}`;
             meta = `Stack: ${logEntry.data.stack}`;
         }
-        
-        logElement.innerHTML =
-            `<div class="log-timestamp">${escapeHtml(timestamp)}</div>
-            <div class="log-content">${escapeHtml(content).replace(/\n/g, '<br>')}</div>
-            <div class="log-meta">${escapeHtml(meta).replace(/\n/g, '<br>')}</div>`;
-        
+
+        const tsDiv = document.createElement('div');
+        tsDiv.className = 'log-timestamp';
+        tsDiv.textContent = timestamp;
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'log-content';
+        createTextContent(contentDiv, content);
+
+        const metaDiv = document.createElement('div');
+        metaDiv.className = 'log-meta';
+        createTextContent(metaDiv, meta);
+
+        logElement.appendChild(tsDiv);
+        logElement.appendChild(contentDiv);
+        logElement.appendChild(metaDiv);
+
         logsOutput.appendChild(logElement);
         logsOutput.scrollTop = logsOutput.scrollHeight;
     }
@@ -142,7 +142,7 @@ class Logger {
             timestamp: new Date().toISOString(),
             logs: this.logs
         };
-        
+
         const blob = new Blob([JSON.stringify(logsData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

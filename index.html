@@ -11,6 +11,7 @@
     <script src="logger.js" defer></script>
     <script src="processor.js" defer></script>
     <script src="markdown-parser.js" defer></script>
+    <script src="row-renderer.js" defer></script>
     <script src="table.js" defer></script>
     <script src="main.js" defer></script>
 </head>
@@ -18,7 +19,7 @@
     <div class="container">
         <div id="loading" class="loading">Loading markdown file...</div>
         <div id="error" class="error" style="display: none;"></div>
-        
+
         <div class="api-config">
             <div class="config-row">
                 <label for="api-url">OpenAI API URL:</label>
@@ -26,7 +27,7 @@
             </div>
             <div class="config-row">
                 <label for="api-key">API Key:</label>
-                <input type="password" id="api-key" placeholder="Enter your OpenAI API key">
+                <input type="password" id="api-key" placeholder="Enter your API key (saved in browser)">
             </div>
             <div class="config-row">
                 <label for="model-name">Model name:</label>
@@ -45,12 +46,12 @@
             <textarea id="prompt-textarea" placeholder="Enter your prompt here..."></textarea>
         </div>
 
-        <div id="table-controls" style="display: none; margin-bottom: 10px;">
+        <div id="table-controls" style="display: none;">
             <button id="collapse-all-btn" class="action-btn">Collapse All</button>
             <button id="expand-all-btn" class="action-btn">Expand All</button>
-            <button id="download-md-btn" class="action-btn" style="background-color: #28a745; color: white;">Download MD</button>
-            <button id="upload-md-btn" class="action-btn" style="background-color: #007bff; color: white;">Upload MD</button>
-            <button id="upload-json-btn" class="action-btn" style="background-color: #007bff; color: white;">Upload JSON</button>
+            <button id="download-md-btn" class="action-btn action-btn--success">Download MD</button>
+            <button id="upload-md-btn" class="action-btn">Upload MD</button>
+            <button id="upload-json-btn" class="action-btn">Upload JSON</button>
             <input type="file" id="upload-md-input" accept=".md" style="display: none;">
             <input type="file" id="upload-json-input" accept=".json" style="display: none;">
         </div>
@@ -71,7 +72,7 @@
         <button class="download-btn" id="download-json">Download JSON</button>
 
         <div id="json-output" class="json-output" style="display: none;"></div>
-        
+
         <div class="logs-section">
             <h3>Request/Response Logs</h3>
             <div class="logs-controls">

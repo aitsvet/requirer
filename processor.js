@@ -1,5 +1,5 @@
 /* exported LLMProcessor */
-/* global ConfigManager, ResponseParser, Logger, APIClient, escapeHtml */
+/* global ConfigManager, ResponseParser, Logger, APIClient, extractLLMText, updateCellContent */
 class LLMProcessor {
     constructor() {
         this.configManager = new ConfigManager();
@@ -16,7 +16,7 @@ class LLMProcessor {
                 return false;
             }
         }
-        
+
         this.configManager.initialize();
         this.apiClient = new APIClient(this.configManager);
         return true;
@@ -24,47 +24,41 @@ class LLMProcessor {
 
     async processSection(section, prompt, allSections = [], sectionIndex = null) {
         const startTime = Date.now();
-        
+
         try {
             const fullPrompt = this.responseParser.substitutePlaceholders(prompt, section, allSections);
             const parameters = this.configManager.getParameters();
-            
-            const requestParameters = {
-                ...parameters
-            };
-            
+
             const requestData = {
                 url: this.configManager.getApiUrl() + '/completions',
                 model: this.configManager.getModel(),
                 prompt: fullPrompt,
-                ...requestParameters
+                ...parameters
             };
 
             this.logger.logRequest(requestData, sectionIndex);
 
-            const response = await this.apiClient.makeRequest(fullPrompt, requestParameters);
+            const response = await this.apiClient.makeRequest(fullPrompt, parameters);
             const duration = Date.now() - startTime;
-            
+
             this.logger.logResponse(response, sectionIndex, duration);
-            
-            const result = this.responseParser.parseLLMResponse(response.choices[0].text);
-            
+
+            const result = this.responseParser.parseLLMResponse(extractLLMText(response));
+
             if (sectionIndex !== null && allSections.length > 0) {
                 if (!allSections[sectionIndex].code) allSections[sectionIndex].code = [];
                 if (!allSections[sectionIndex].other) allSections[sectionIndex].other = [];
-                
+
                 allSections[sectionIndex].code = result.code;
                 allSections[sectionIndex].other = result.other;
-                
+
                 this.updateJSONOutput(allSections);
             }
-            
+
             return result;
         } catch (error) {
             console.error('Error processing section with LLM:', error);
-            
             this.logger.logError(error, sectionIndex);
-            
             throw error;
         }
     }
@@ -73,108 +67,85 @@ class LLMProcessor {
         const sourcePlaceholderRegex = /\{sources\.(\d+)\}/g;
         const skipSections = new Set();
         let match;
-        
+
         while ((match = sourcePlaceholderRegex.exec(prompt)) !== null) {
             skipSections.add(parseInt(match[1]));
         }
-        
+
         return Array.from(skipSections);
     }
 
-    async processAllSections(sections, prompt) {
-        const results = [];
-        const sectionsToSkip = this.getSectionsToSkip(prompt);
-        
-        for (let i = 0; i < sections.length; i++) {
-            if (sectionsToSkip.includes(i)) {
-                continue;
-            }
-            
-            if (this.hasNoSource(sections[i])) {
-                continue;
-            }
-            
-            try {
-                const result = await this.processSection(sections[i], prompt, sections, i);
-                results.push({
-                    index: i,
-                    result: result,
-                    success: true
-                });
-                
-                this.updateTableRow(i, result);
-                
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            } catch (error) {
-                results.push({
-                    index: i,
-                    error: error.message,
-                    success: false
-                });
-            }
+    async _processEligible(eligible, sections, prompt) {
+        const concurrency = this.configManager.getConcurrency();
+        const errors = [];
+
+        for (let i = 0; i < eligible.length; i += concurrency) {
+            const batch = eligible.slice(i, i + concurrency);
+            const results = await Promise.allSettled(
+                batch.map(({ section, index }) =>
+                    this.processSection(section, prompt, sections, index)
+                        .then(result => { this.updateTableRow(index, result); })
+                )
+            );
+            results.forEach((r, bi) => {
+                if (r.status === 'rejected') {
+                    errors.push({ index: eligible[i + bi].index, message: r.reason?.message || String(r.reason) });
+                }
+            });
         }
-        
-        return results;
+
+        return errors;
+    }
+
+    async processAllSections(sections, prompt) {
+        const sectionsToSkip = this.getSectionsToSkip(prompt);
+        const eligible = sections
+            .map((section, index) => ({ section, index }))
+            .filter(({ section, index }) =>
+                !sectionsToSkip.includes(index) && !this.hasNoSource(section));
+        return this._processEligible(eligible, sections, prompt);
     }
 
     async processEmptySections(sections, prompt) {
-        const emptySections = sections.map((section, index) => ({ section, index }))
-            .filter(({ section }) => this.isSectionEmpty(section));
-        
         const sectionsToSkip = this.getSectionsToSkip(prompt);
-        const results = [];
-        
-        for (const { section, index } of emptySections) {
-            if (sectionsToSkip.includes(index)) {
-                continue;
-            }
-            
-            if (this.hasNoSource(section)) {
-                continue;
-            }
-            
-            try {
-                const result = await this.processSection(section, prompt, sections, index);
-                results.push({
-                    index: index,
-                    result: result,
-                    success: true
-                });
-                
-                this.updateTableRow(index, result);
-                
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            } catch (error) {
-                results.push({
-                    index: index,
-                    error: error.message,
-                    success: false
-                });
-            }
-        }
-        
-        return results;
+        const eligible = sections
+            .map((section, index) => ({ section, index }))
+            .filter(({ section, index }) =>
+                this.isSectionEmpty(section) && !sectionsToSkip.includes(index) && !this.hasNoSource(section));
+        return this._processEligible(eligible, sections, prompt);
+    }
+
+    async processFromIndex(startIndex, sections, prompt) {
+        const eligible = sections
+            .slice(startIndex)
+            .map((section, i) => ({ section, index: startIndex + i }))
+            .filter(({ section }) => !this.hasNoSource(section));
+        return this._processEligible(eligible, sections, prompt);
+    }
+
+    getConcurrency() {
+        return this.configManager.getConcurrency();
     }
 
     isSectionEmpty(section) {
-        const hasCode = section.code && section.code.length > 0 && 
-                       !section.code.every(item => 
-                           item === '(Код)' || 
+        const hasCode = section.code && section.code.length > 0 &&
+                       !section.code.every(item =>
+                           item === '(Код)' ||
                            item === 'Код' ||
                            item.trim() === '' ||
                            item === 'N/A' ||
                            item === 'None'
                        );
-        
-        const hasOther = section.other && section.other.length > 0 && 
-                        !section.other.every(item => 
-                            item === 'Текст' || 
+
+        const hasOther = section.other && section.other.length > 0 &&
+                        !section.other.every(item =>
+                            item === 'Текст' ||
                             item === 'Требования' ||
                             item.trim() === '' ||
                             item === 'N/A' ||
                             item === 'None'
                         );
-        
+
         return !hasCode && !hasOther;
     }
 
@@ -182,7 +153,7 @@ class LLMProcessor {
         if (!section.source || section.source.length === 0) {
             return true;
         }
-        
+
         return section.source.every(sourceItem => {
             if (typeof sourceItem === 'string') {
                 return sourceItem.trim() === '';
@@ -196,25 +167,11 @@ class LLMProcessor {
     updateTableRow(index, result) {
         const tbody = document.getElementById('sections-tbody');
         const row = tbody.children[index];
-        
-        if (row) {
-            const codeCell = row.children[2];
-            const otherCell = row.children[3];
-            
-            if (result.code && result.code.length > 0) {
-                const newCodeContent = result.code.map(item => `<div>${escapeHtml(item)}</div>`).join('');
-                codeCell.innerHTML = newCodeContent;
-            } else {
-                codeCell.innerHTML = '';
-            }
 
-            if (result.other && result.other.length > 0) {
-                const newOtherContent = result.other.map(item => `<div>${escapeHtml(item)}</div>`).join('');
-                otherCell.innerHTML = newOtherContent;
-            } else {
-                otherCell.innerHTML = '';
-            }
-            
+        if (row) {
+            updateCellContent(row.children[2], result.code);
+            updateCellContent(row.children[3], result.other);
+
             setTimeout(() => {
                 if (window.updateTableColumnWidths) {
                     window.updateTableColumnWidths();

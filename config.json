@@ -1,9 +1,9 @@
 {
     "api": {
       "url": "http://localhost:11434/v1",
-      "model": "qwen3:30b",
-      "key": "EMPTY"
+      "model": "qwen3:30b"
     },
+    "concurrency": 1,
     "prompts": [
         {
             "name": "Requirements Analysis",

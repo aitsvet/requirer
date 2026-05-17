@@ -1,10 +1,18 @@
-/* exported escapeHtml, ConfigManager */
+/* exported escapeHtml, createTextContent, ConfigManager */
 function escapeHtml(str) {
     return String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function createTextContent(parent, text) {
+    String(text).split('\n').forEach((part, i) => {
+        if (i > 0) parent.appendChild(document.createElement('br'));
+        parent.appendChild(document.createTextNode(part));
+    });
 }
 
 class ConfigManager {
@@ -15,6 +23,7 @@ class ConfigManager {
         this.promptTemplate = '';
         this.prompts = [];
         this.parameters = {};
+        this.concurrency = 1;
         this.config = null;
         this.availableModels = [];
         this.modelSelect = null;
@@ -30,10 +39,11 @@ class ConfigManager {
             this.config = await response.json();
             this.apiUrl = this.config.api.url;
             this.model = this.config.api.model;
-            this.apiKey = this.config.api.key;
+            this.apiKey = localStorage.getItem('requirer-api-key') || '';
             this.prompts = this.config.prompts || [];
-            this.promptTemplate = ''; // Start with blank textarea
+            this.promptTemplate = '';
             this.parameters = this.config.parameters || {};
+            this.concurrency = this.config.concurrency || 1;
             this.populateFormElements();
             return true;
         } catch (error) {
@@ -49,7 +59,7 @@ class ConfigManager {
         const promptSelect = document.getElementById('prompt-select');
         const promptTextarea = document.getElementById('prompt-textarea');
         const parametersTextarea = document.getElementById('parameters-textarea');
-        
+
         if (apiUrlInput) apiUrlInput.value = this.apiUrl;
         if (apiKeyInput) apiKeyInput.value = this.apiKey;
         if (modelNameSelect) {
@@ -84,11 +94,11 @@ class ConfigManager {
         if (!this.config) {
             return false;
         }
-        
+
         this.apiUrl = document.getElementById('api-url').value;
         this.apiKey = document.getElementById('api-key').value;
         this.model = document.getElementById('model-name').value;
-        
+
         const parametersTextarea = document.getElementById('parameters-textarea');
         if (parametersTextarea) {
             try {
@@ -97,60 +107,47 @@ class ConfigManager {
                 console.error('Error parsing parameters JSON:', error);
             }
         }
-        
+
         return true;
     }
 
-    getApiUrl() {
-        return this.apiUrl;
-    }
-
-    getModel() {
-        return this.model;
-    }
-
-    getApiKey() {
-        return this.apiKey;
-    }
-
-    getParameters() {
-        return this.parameters;
-    }
+    getApiUrl() { return this.apiUrl; }
+    getModel() { return this.model; }
+    getApiKey() { return this.apiKey; }
+    getParameters() { return this.parameters; }
+    getConcurrency() { return this.concurrency; }
 
     setupEventListeners() {
         const apiUrlInput = document.getElementById('api-url');
         const apiKeyInput = document.getElementById('api-key');
         const promptSelect = document.getElementById('prompt-select');
         const promptTextarea = document.getElementById('prompt-textarea');
-        
+
         if (apiUrlInput && apiKeyInput) {
             let fetchTimeout;
-            const fetchModels = () => {
+            const triggerFetch = () => {
                 clearTimeout(fetchTimeout);
-                fetchTimeout = setTimeout(() => {
-                    this.fetchModels();
-                }, 1000);
+                fetchTimeout = setTimeout(() => this.fetchModels(), 1000);
             };
-            
-            apiUrlInput.addEventListener('input', fetchModels);
-            apiKeyInput.addEventListener('input', fetchModels);
+
+            apiUrlInput.addEventListener('input', triggerFetch);
+            apiKeyInput.addEventListener('input', () => {
+                localStorage.setItem('requirer-api-key', apiKeyInput.value);
+                triggerFetch();
+            });
         }
-        
+
         if (promptSelect && promptTextarea) {
             promptSelect.addEventListener('change', (event) => {
                 const selectedIndex = event.target.value;
-                
                 if (selectedIndex === '') {
-                    // "New prompt template" selected - clear textarea
                     promptTextarea.value = '';
                 } else {
-                    // Load selected prompt
                     const promptIndex = parseInt(selectedIndex);
                     if (promptIndex >= 0 && promptIndex < this.prompts.length) {
                         promptTextarea.value = this.prompts[promptIndex].content;
                     }
                 }
-                
                 this.setTextareaHeight(promptTextarea);
             });
         }
@@ -176,41 +173,45 @@ class ConfigManager {
             this.promptSelect.innerHTML = '<option value="">No prompts available</option>';
             return;
         }
-        
+
         this.promptSelect.innerHTML = '';
-        
-        // Add "New prompt template" option first
+
         const newPromptOption = document.createElement('option');
         newPromptOption.value = '';
         newPromptOption.textContent = 'New prompt template';
         this.promptSelect.appendChild(newPromptOption);
-        
-        // Add existing prompts
+
         this.prompts.forEach((prompt, index) => {
             const option = document.createElement('option');
             option.value = index;
             option.textContent = prompt.name;
             this.promptSelect.appendChild(option);
         });
-        
-        // Set default selection to "New prompt template" (empty value)
+
         this.promptSelect.value = '';
     }
 
     async fetchModels() {
         const apiUrl = document.getElementById('api-url').value;
         const apiKey = document.getElementById('api-key').value;
-        
+
         if (!apiUrl || !apiKey) {
             this.modelSelect.innerHTML = '<option value="">Enter API URL and Key first</option>';
             return;
         }
-        this.modelSelect.innerHTML = '<option value="">Loading models...</option>';
-        
+
+        let modelsUrl;
         try {
-            const baseUrl = apiUrl.replace('/v1/chat/completions', '').replace('/v1', '');
-            const modelsUrl = `${baseUrl}/v1/models`;
-            
+            const url = new URL(apiUrl);
+            modelsUrl = `${url.origin}/v1/models`;
+        } catch (e) {
+            this.modelSelect.innerHTML = `<option value="">Invalid URL: ${e.message}</option>`;
+            return;
+        }
+
+        this.modelSelect.innerHTML = '<option value="">Loading models...</option>';
+
+        try {
             const response = await fetch(modelsUrl, {
                 method: 'GET',
                 headers: {
@@ -218,17 +219,17 @@ class ConfigManager {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
             }
-            
+
             const data = await response.json();
             this.availableModels = data.data || [];
-            
+
             this.populateModelSelect();
             this.validateConfigModel();
-            
+
         } catch (error) {
             console.error('Error fetching models:', error);
             this.modelSelect.innerHTML = `<option value="">Error: ${error.message}</option>`;
@@ -255,14 +256,13 @@ class ConfigManager {
 
     validateConfigModel() {
         if (!this.model || !this.availableModels.length) return;
-        
+
         const modelExists = this.availableModels.some(model => model.id === this.model);
-        
+
         if (!modelExists) {
             console.warn(`Model "${this.model}" from config.json is not available in the models list`);
             const warningDiv = document.createElement('div');
             warningDiv.className = 'warning';
-            warningDiv.style.cssText = 'color: orange; margin: 10px 0; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;';
             warningDiv.textContent = `Warning: Model "${this.model}" from config.json is not available. Please select a different model.`;
             const modelRow = this.modelSelect.closest('.config-row');
             if (modelRow && !modelRow.querySelector('.warning')) {

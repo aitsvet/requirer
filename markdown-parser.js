@@ -32,10 +32,7 @@ class MarkdownParser {
             if (headingMatch) {
                 if (currentParagraph.trim() !== '') {
                     if (!currentSection) {
-                        currentSection = {
-                            title: '',
-                            source: []
-                        };
+                        currentSection = { title: '', source: [] };
                     }
                     currentSection.source.push(currentParagraph.trim());
                     currentParagraph = '';
@@ -45,16 +42,10 @@ class MarkdownParser {
                     sections.push(currentSection);
                 }
 
-                currentSection = {
-                    title: headingMatch[1],
-                    source: []
-                };
+                currentSection = { title: headingMatch[1], source: [] };
             } else {
                 if (!currentSection) {
-                    currentSection = {
-                        title: '',
-                        source: []
-                    };
+                    currentSection = { title: '', source: [] };
                 }
 
                 if (line.trim() === '') {
@@ -63,21 +54,14 @@ class MarkdownParser {
                         currentParagraph = '';
                     }
                 } else {
-                    if (currentParagraph !== '') {
-                        currentParagraph += '\n' + line;
-                    } else {
-                        currentParagraph = line;
-                    }
+                    currentParagraph = currentParagraph !== '' ? currentParagraph + '\n' + line : line;
                 }
             }
         }
 
         if (currentParagraph.trim() !== '') {
             if (!currentSection) {
-                currentSection = {
-                    title: '',
-                    source: []
-                };
+                currentSection = { title: '', source: [] };
             }
             currentSection.source.push(currentParagraph.trim());
         }
@@ -88,22 +72,14 @@ class MarkdownParser {
 
         for (const section of sections) {
             const newSource = [];
-            let i = 0;
 
-            while (i < section.source.length) {
-                const para = section.source[i];
-
+            for (const para of section.source) {
                 if (typeof para === 'string' && this.isTableInText(para)) {
                     const table = this.parseTableFromText(para);
-                    if (table && table.length > 0) {
-                        newSource.push(table);
-                    } else {
-                        newSource.push(para);
-                    }
+                    newSource.push(table && table.length > 0 ? table : para);
                 } else {
                     newSource.push(para);
                 }
-                i++;
             }
 
             section.source = newSource;
@@ -114,13 +90,23 @@ class MarkdownParser {
 
     isTableInText(text) {
         const lines = text.trim().split('\n');
-        if (lines.length < 2) return false;
-        return lines.some(line => line.includes('|'));
+        return lines.some(line => /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?$/.test(line));
+    }
+
+    splitTableRow(line) {
+        const parts = line.split('|');
+        const start = parts[0].trim() === '' ? 1 : 0;
+        const end = parts[parts.length - 1].trim() === '' ? parts.length - 1 : parts.length;
+        return parts.slice(start, end).map(p => p.trim());
+    }
+
+    isSeparatorRow(line) {
+        const cells = line.split('|').map(c => c.trim()).filter(c => c !== '');
+        return cells.length > 0 && cells.every(c => /^:?-+:?$/.test(c));
     }
 
     parseTableFromText(text) {
         const lines = text.trim().split('\n');
-        const tableData = [];
         let headerRow = -1;
 
         for (let i = 0; i < lines.length; i++) {
@@ -132,29 +118,26 @@ class MarkdownParser {
 
         if (headerRow === -1) return null;
 
-        const headers = lines[headerRow].split('|')
-            .map(h => h.trim())
-            .filter(h => h !== '');
+        const headers = this.splitTableRow(lines[headerRow]);
+        if (headers.length === 0) return null;
 
         let dataStartRow = headerRow + 1;
-        if (dataStartRow < lines.length && lines[dataStartRow].includes('---')) {
+        if (dataStartRow < lines.length && this.isSeparatorRow(lines[dataStartRow])) {
             dataStartRow++;
         }
 
+        const tableData = [];
         for (let i = dataStartRow; i < lines.length; i++) {
             const line = lines[i].trim();
-            if (line.includes('|')) {
-                const values = line.split('|')
-                    .map(v => v.trim())
-                    .filter(v => v !== '');
+            if (!line.includes('|')) continue;
 
-                if (values.length > 0) {
-                    const row = {};
-                    headers.forEach((header, index) => {
-                        row[header] = values[index] || '';
-                    });
-                    tableData.push(row);
-                }
+            const values = this.splitTableRow(line);
+            if (values.length > 0) {
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] ?? '';
+                });
+                tableData.push(row);
             }
         }
 
