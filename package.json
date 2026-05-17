@@ -1,0 +1,28 @@
+{
+  "name": "requirer",
+  "version": "1.0.0",
+  "description": "``` python3 -m http.server -d . ```",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aitsvet/requirer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aitsvet/requirer/issues"
+  },
+  "homepage": "https://github.com/aitsvet/requirer#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.60.0",
+    "eslint": "^10.4.0",
+    "globals": "^17.6.0"
+  }
+}
