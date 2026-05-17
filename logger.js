@@ -1,3 +1,5 @@
+/* exported Logger */
+/* global escapeHtml */
 class Logger {
     constructor() {
         this.logs = [];
@@ -38,7 +40,7 @@ class Logger {
     logResponse(responseData, sectionIndex = null, duration = null) {
         console.log('Full response data:', responseData);
         
-        let content = '';
+        let content;
         if (responseData.choices && responseData.choices[0]) {
             content = responseData.choices[0].text || responseData.choices[0].message?.content || responseData.choices[0].content || '';
         } else if (responseData.text) {

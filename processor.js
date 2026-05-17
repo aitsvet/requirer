@@ -1,3 +1,5 @@
+/* exported LLMProcessor */
+/* global ConfigManager, ResponseParser, Logger, APIClient, escapeHtml */
 class LLMProcessor {
     constructor() {
         this.configManager = new ConfigManager();
@@ -59,7 +61,6 @@ class LLMProcessor {
             
             return result;
         } catch (error) {
-            const duration = Date.now() - startTime;
             console.error('Error processing section with LLM:', error);
             
             this.logger.logError(error, sectionIndex);

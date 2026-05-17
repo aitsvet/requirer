@@ -1,3 +1,4 @@
+/* exported MarkdownParser */
 class MarkdownParser {
     constructor() {
         this.sections = [];

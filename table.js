@@ -1,3 +1,4 @@
+/* global MarkdownParser, processSection, processSectionAndBelow, escapeHtml */
 document.addEventListener('DOMContentLoaded', () => {
     const parser = new MarkdownParser();
 
@@ -12,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.getElementById('sections-tbody');
 
         const loading = document.getElementById('loading');
-        const error = document.getElementById('error');
 
         loading.style.display = 'none';
         table.style.display = 'table';

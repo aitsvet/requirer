@@ -1,3 +1,4 @@
+/* exported escapeHtml, ConfigManager */
 function escapeHtml(str) {
     return String(str)
         .replace(/&/g, '&amp;')

@@ -1,3 +1,4 @@
+/* exported ResponseParser */
 class ResponseParser {
     parseLLMResponse(response) {
         const lines = response.split('\n');

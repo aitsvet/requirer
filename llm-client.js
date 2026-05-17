@@ -1,3 +1,4 @@
+/* exported APIClient */
 class APIClient {
     constructor(configManager) {
         this.configManager = configManager;

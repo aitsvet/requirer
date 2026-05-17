@@ -1,3 +1,5 @@
+/* exported processSection, processSectionAndBelow */
+/* global LLMProcessor, MarkdownParser, escapeHtml */
 let llmProcessor = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -217,8 +219,8 @@ async function uploadJsonFile(file) {
         
         console.log('✅ Section count matches, proceeding with content validation...');
         
-        let validationErrors = [];
-        let diffSummary = {
+        const validationErrors = [];
+        const diffSummary = {
             sectionsWithDifferences: 0,
             totalCodeItems: 0,
             totalOtherItems: 0,
@@ -348,7 +350,6 @@ async function uploadJsonFile(file) {
 }
 
 function rerenderTable(sections) {
-    const table = document.getElementById('sections-table');
     const tbody = document.getElementById('sections-tbody');
     
     tbody.innerHTML = '';
