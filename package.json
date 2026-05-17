@@ -1,7 +1,7 @@
 {
   "name": "requirer",
   "version": "1.0.0",
-  "description": "``` python3 -m http.server -d . ```",
+  "description": "Browser tool for LLM-powered requirement extraction from Markdown documents",
   "main": "main.js",
   "type": "module",
   "scripts": {
@@ -14,7 +14,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/aitsvet/requirer/issues"
   },
